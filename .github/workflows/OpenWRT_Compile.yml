@@ -6,6 +6,12 @@ name: OpenWRT_Compile
 on: 
   workflow_dispatch:
     inputs:
+      # 私有库访问密钥
+      Private_Token: 
+        description: "私有库访问密钥"
+        required: true
+        type: string
+      
       # openWRT源码
       Repo_URL:
         description: |
@@ -32,7 +38,19 @@ on:
         description: "Clash架构：amd64-v3|arm64"
         required: true
         type: string
-      
+
+      # Clash订阅链接
+      Clash_Subscription_Main: 
+        description: "Clash订阅链接Main"
+        required: true
+        type: string
+
+      # Clash订阅链接
+      Clash_Subscription_Backup: 
+        description: "Clash订阅链接Backup"
+        required: true
+        type: string
+
       # 运行模式
       Mode: 
         description: "路由器运行模式：Router|DualWan"
@@ -59,10 +77,6 @@ env:
   
   # GeoSite数据库下载链接
   GeoSite_URL: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geosite.dat"
-  
-  # Clash订阅连接
-  Clash_Subscription_Main: 
-  Clash_Subscription_Backup: 
   
   # 指定系统时区
   TZ: Asia/Shanghai
@@ -138,6 +152,14 @@ jobs:
       uses: actions/checkout@main
 
 
+    - name: 读取私有Github仓库
+      uses: actions/checkout@main
+      with:
+        repository: refined-fish/OpenWRT-CI-Private
+        path: Private
+        token: ${{ github.event.inputs.Private_Token }}
+
+
     - name: 查询当前CI的配置信息
       run: |
         echo -e "已知CPU型号(降序): AMD EPYC 7763\n"
@@ -176,16 +198,15 @@ jobs:
         echo "已拉取openWRT源码到./wrt"
 
 
-    - name: 缓存文件
+    - name: 缓存工具链文件（节省1h）
       id: check-cache
       uses: actions/cache@main
       with:
         key: ${{env.openWRT_Version}}_${{ github.event.inputs.Target }}
         path: |
           ./wrt/.ccache
-          ./wrt/staging_dir
-          ./wrt/build_dir
-          ./wrt/bin/packages
+          ./wrt/staging_dir/host*
+          ./wrt/staging_dir/tool*
 
 
     - name: 判断缓存状态
@@ -218,7 +239,7 @@ jobs:
         rm -rf ./tmp* ./.config*
         
         # 将仓库内指定架构的配置文件复制到编译目录
-        cat ${GITHUB_WORKSPACE}/Config/${{ github.event.inputs.Target }}.config >> ./.config
+        cat ${GITHUB_WORKSPACE}/Private/Config/${{ github.event.inputs.Target }}.config >> ./.config
         
         # 生成配置文件
         make defconfig -j$(nproc)
@@ -232,19 +253,19 @@ jobs:
         rm -rf ./files
         
         # 复制通用General_Files
-        General_Files_Path="${GITHUB_WORKSPACE}/files/01-files-General/"
+        General_Files_Path="${GITHUB_WORKSPACE}/Private/files/01-files-General/"
         cp -rf  ${General_Files_Path} ./files/
         
         # 复制模式Mode_Files
-        Mode_Files_Path="${GITHUB_WORKSPACE}/files/02-files-${{ github.event.inputs.Mode }}/*"
+        Mode_Files_Path="${GITHUB_WORKSPACE}/Private/files/02-files-${{ github.event.inputs.Mode }}/*"
         cp -rf ${Mode_Files_Path} ./files/
         
         # 复制架构Target_Files
-        Target_Files_Path="${GITHUB_WORKSPACE}/files/03-files-${{ github.event.inputs.Target }}/*"
+        Target_Files_Path="${GITHUB_WORKSPACE}/Private/files/03-files-${{ github.event.inputs.Target }}/*"
         cp -rf ${Target_Files_Path} ./files/
         
         # 复制自定义files
-        User_Files_Path="${GITHUB_WORKSPACE}/files/04-files-${{ github.event.inputs.User }}/*"
+        User_Files_Path="${GITHUB_WORKSPACE}/Private/files/04-files-${{ github.event.inputs.User }}/*"
         cp -rf ${User_Files_Path} ./files/
 
 
@@ -262,8 +283,8 @@ jobs:
         wget -cq ${{ env.GeoSite_URL }} -P files/etc/openclash/
         
         # 下载最新订阅文件
-        wget -cq ${{ env.Clash_Subscription_Main }} -P files/etc/openclash/config/
-        wget -cq ${{ env.Clash_Subscription_Backup }} -P files/etc/openclash/config/
+        wget -cq ${{ github.event.inputs.Clash_Subscription_Main }} -P files/etc/openclash/config/
+        wget -cq ${{ github.event.inputs.Clash_Subscription_Backup }} -P files/etc/openclash/config/
         
         # 检查files文件
         tree ./files
