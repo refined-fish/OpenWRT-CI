@@ -15,7 +15,7 @@ on:
       # openWRT源码
       Repo_URL:
         description: |
-          上游OP源码：----------------------------------------------
+          上游OP源码：-------------------------------
           VIKINGYFY：https://github.com/VIKINGYFY/immortalwrt
           immortalwrt：https://github.com/immortalwrt/immortalwrt
         required: true
@@ -42,13 +42,13 @@ on:
       # Clash订阅链接
       Clash_Subscription_Main: 
         description: "Clash订阅链接Main"
-        required: true
+        required: false
         type: string
 
       # Clash订阅链接
       Clash_Subscription_Backup: 
         description: "Clash订阅链接Backup"
-        required: true
+        required: false
         type: string
 
       # 运行模式
@@ -187,7 +187,7 @@ jobs:
         # 生成编译版本，通过提取 Repo_URL 的最后一段实现
         export openWRT_Version=$(basename ${{ github.event.inputs.Repo_URL }})_${{ github.event.inputs.Repo_Branch }}
         
-        # 添加上述环境变量到github action env中，以便后文引用
+        # 添加上述环境变量到 github action env 中，以便后文引用
         echo "Compile_Date=${Compile_Date}" >> $GITHUB_ENV
         echo "openWRT_Version=${openWRT_Version}" >> $GITHUB_ENV
 
@@ -273,12 +273,12 @@ jobs:
         wget -O- ${Clash_Core_URL} | tar xOvz > ./files/etc/openclash/core/clash_meta
         
         # 下载最新GEO数据库
-        wget ${{ env.GeoIP_URL }} -P files/etc/openclash/
-        wget ${{ env.GeoSite_URL }} -P files/etc/openclash/
+        wget ${{ env.GeoIP_URL }} -P ./files/etc/openclash/
+        wget ${{ env.GeoSite_URL }} -P ./files/etc/openclash/
         
         # 下载最新订阅文件
-        wget ${{ github.event.inputs.Clash_Subscription_Main }} -P files/etc/openclash/config/
-        wget ${{ github.event.inputs.Clash_Subscription_Backup }} -P files/etc/openclash/config/
+        #wget ${{ github.event.inputs.Clash_Subscription_Main }} -P ./files/etc/openclash/config/
+        #wget ${{ github.event.inputs.Clash_Subscription_Backup }} -P ./files/etc/openclash/config/
         
         # 检查files文件
         tree ./files
