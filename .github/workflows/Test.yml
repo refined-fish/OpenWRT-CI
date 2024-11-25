@@ -4,6 +4,12 @@ name: Test
 ######### 定义触发器
 on: 
   workflow_dispatch:
+    inputs:
+      # Clash内核架构
+      Clash_Core: 
+        description: "Clash架构：amd64-v3|arm64"
+        required: true
+        type: string
 
 ########## jobs定义
 jobs:
