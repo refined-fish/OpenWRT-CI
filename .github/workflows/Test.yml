@@ -1,5 +1,5 @@
 ########## 工作流名称
-name: OpenWRT_Compile
+name: Test
 
 ######### 定义触发器
 on: 
