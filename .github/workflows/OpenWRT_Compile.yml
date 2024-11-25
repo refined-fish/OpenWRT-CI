@@ -277,8 +277,8 @@ jobs:
         wget ${{ env.GeoSite_URL }} -P ./files/etc/openclash/
         
         # 下载最新订阅文件
-        #wget ${{ github.event.inputs.Clash_Subscription_Main }} -P ./files/etc/openclash/config/
-        #wget ${{ github.event.inputs.Clash_Subscription_Backup }} -P ./files/etc/openclash/config/
+        wget ${{ github.event.inputs.Clash_Subscription_Main }} -P ./files/etc/openclash/config/
+        wget ${{ github.event.inputs.Clash_Subscription_Backup }} -P ./files/etc/openclash/config/
         
         # 检查files文件
         tree ./files
