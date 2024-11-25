@@ -1,0 +1,307 @@
+########## 工作流名称
+name: OpenWRT_Compile
+
+
+######### 定义触发器
+on: 
+  workflow_dispatch:
+    inputs:
+      # openWRT源码
+      Repo_URL:
+        description: |
+          源码选择：
+          VIKINGYFY：https://github.com/VIKINGYFY/immortalwrt
+          immortalwrt：https://github.com/immortalwrt/immortalwrt
+        required: true
+        type: string 
+
+      # openWRT源码分支
+      Repo_Branch: 
+        description: "源码分支：main|master|openwrt-24.10"
+        required: true
+        type: string
+
+      # Target架构
+      Target: 
+        description: "架构：x86|ZN_M2"
+        required: true
+        type: string
+      
+      # Clash内核架构
+      Clash_Core: 
+        description: "Clash架构：amd64-v3|arm64"
+        required: true
+        type: string
+      
+      # 运行模式
+      Mode: 
+        description: "路由器运行模式：Router|DualWan"
+        required: true
+        type: string
+      
+      # 用户配置
+      User: 
+        description: "用户配置：无|FISH|BiBi|KING|SCU|SuiNing"
+        required: true
+        type: string    
+
+
+########## 工作流中的环境变量
+env:
+  # 编译环境依赖安装脚本，来自openWRT仓库源码说明
+  Environment_Script: "https://build-scripts.immortalwrt.org/init_build_environment.sh"
+  
+  # 自定义新增Feeds源仓库地址，不新增请留空
+  Package_URL: "kiddin9 https://github.com/kiddin9/kwrt-packages.git"
+  
+  # GeoIP数据库下载链接
+  GeoIP_URL: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.dat"
+  
+  # GeoSite数据库下载链接
+  GeoSite_URL: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geosite.dat"
+  
+  # Clash订阅连接
+  Clash_Subscription_Main: 
+  Clash_Subscription_Backup: 
+  
+  # 指定系统时区
+  TZ: Asia/Shanghai
+
+
+########## CI权限
+permissions: 
+  #允许工作流创建、取消或重新运行工作流
+  actions: read
+  # 允许工作流创建、更新和完成检查运行
+  checks: read
+  # 允许工作流读取和写入存储库中的内容，包括release文件、提交和分支
+  contents: write
+  # 允许工作流创建、更新和删除部署状态
+  deployments: read
+  # 允许工作流读取问题（issue）列表和详细信息
+  issues: read
+  # 允许工作流发布、更新或删除 GitHub Packages 中的包
+  packages: read
+  # 允许工作流更新拉取请求
+  pull-requests: read
+  # 允许工作流读取存储库中的项目板
+  repository-projects: read
+  # 允许工作流设置提交的状态
+  statuses: write
+
+
+########## jobs定义
+jobs:
+  OpenWRT_Compile:
+    # 目前Ubuntu最新22.04
+    runs-on: ubuntu-latest
+    steps:
+
+
+    - name: 最大化构建任务的磁盘空间
+      uses: endersonmenezes/free-disk-space@main
+      with:
+        remove_android: true
+        remove_dotnet: true
+        remove_haskell: true
+        remove_tool_cache: true
+        remove_swap: true
+        remove_packages: "android* azure* clang* dotnet* firefox* ghc* golang* google* libclang* libgl1* lld* llvm* \
+          microsoft* mongodb* mono* mysql* nodejs* openjdk* php* postgresql* powershell* snap* temurin* yarn* zulu*"
+        remove_packages_one_command: true
+        remove_folders: "/etc/apt/sources.list.d* /etc/mono* /etc/mysql* /usr/include/linux/android* /usr/lib/llvm* /usr/lib/mono* \
+          /usr/local/lib/android* /usr/local/lib/node_modules* /usr/local/share/chromium* /usr/local/share/powershell* \
+          /usr/local/share/vcpkg/ports/azure* /usr/local/share/vcpkg/ports/google* /usr/local/share/vcpkg/ports/libpq/android* \
+          /usr/local/share/vcpkg/ports/llvm* /usr/local/share/vcpkg/ports/mysql* /usr/local/share/vcpkg/ports/snap* \
+          /usr/share/azure* /usr/share/dotnet* /usr/share/glade* /usr/share/miniconda* /usr/share/php* /usr/share/swift \
+          /var/lib/mysql* /var/log/azure*"
+        testing: false
+
+
+    - name: 删除Docker镜像并初始化编译环境
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        docker rmi $(docker images -q)          
+        sudo -E apt -yqq update
+        sudo -E apt -yqq full-upgrade
+        sudo -E apt -yqq autoremove --purge
+        sudo -E apt -yqq autoclean
+        sudo -E apt -yqq clean
+        sudo -E apt -yqq install dos2unix
+        sudo bash -c 'bash <(curl -sL ${{env.Environment_Script}})'
+        sudo -E systemctl daemon-reload
+        sudo -E timedatectl set-timezone "${{env.TZ}}"
+
+
+    - name: 读取当前Github仓库
+      uses: actions/checkout@main
+
+
+    - name: 查询当前CI的配置信息
+      run: |
+        echo -e "已知CPU型号(降序): AMD EPYC 7763\n"
+        echo "--------------------------CPU信息--------------------------"
+        echo "CPU物理数量: $(cat /proc/cpuinfo | grep "physical id" | sort | uniq | wc -l)"
+        echo "CPU核心数量: $(nproc)"
+        echo -e "CPU型号信息:$(cat /proc/cpuinfo | grep -m1 name | awk -F: '{print $2}')\n"
+        echo "--------------------------内存信息--------------------------"
+        echo "已安装内存详细信息:"
+        echo -e "$(sudo lshw -short -C memory | grep GiB)\n"
+        echo "--------------------------硬盘信息--------------------------"
+        echo "硬盘数量: $(ls /dev/sd* | grep -v [1-9] | wc -l)" && df -hT
+
+  
+    - name: 使用预编译的node.js环境
+      uses: actions/setup-node@main
+      with:
+        node-version: '20'
+
+
+    - name: 初始化部分环境变量
+      run: |
+        # 生成编译时间
+        export Compile_Date=$(TZ=UTC-8 date +"%y.%m.%d_%H.%M.%S")
+        # 生成编译版本，通过提取 Repo_URL 的最后一段实现
+        export openWRT_Version=$(basename ${{ github.event.inputs.Repo_URL }})_${{ github.event.inputs.Repo_Branch }}
+        
+        # 添加上述环境变量到github action env中，以便后文引用
+        echo "Compile_Date=${Compile_Date}" >> $GITHUB_ENV
+        echo "openWRT_Version=${openWRT_Version}" >> $GITHUB_ENV
+
+
+    - name: 拉取源码并命名为预设值
+      run: |
+        git clone --depth 1 -b ${{ github.event.inputs.Repo_Branch }} --single-branch ${{ github.event.inputs.Repo_URL }} ./wrt
+        echo "已拉取openWRT源码到./wrt"
+
+
+    - name: 缓存文件
+      id: check-cache
+      uses: actions/cache@main
+      with:
+        key: ${{env.openWRT_Version}}_${{ github.event.inputs.Target }}
+        path: |
+          ./wrt/.ccache
+          ./wrt/staging_dir
+          ./wrt/build_dir
+          ./wrt/bin/packages
+
+
+    - name: 判断缓存状态
+      run: |
+        if ${{steps.check-cache.outputs.cache-hit == 'true'}}; then
+          echo "缓存命中！将会跳过工具链编译！"
+        else
+          echo "缓存未命中！本次编译成功后将会缓存 ！"
+        fi
+
+
+    - name: 增加自定义Feeds源，更新并安装 feeds
+      run: |
+        cd ./wrt
+        
+        # 新增自定义源
+        echo "src-git ${{env.Package_URL}}" >> ./feeds.conf.default
+        
+        # 更新并安装feeds，只输出关键信息
+        ./scripts/feeds update -a
+        ./scripts/feeds install -a
+        echo "额外添加 ${{env.Package_URL}} 并已更新且安装feeds软件包源"
+
+
+    - name: 自定义.config配置文件
+      run: |
+        cd ./wrt
+        
+        # 删除临时文件和已有config
+        rm -rf ./tmp* ./.config*
+        
+        # 将仓库内指定架构的配置文件复制到编译目录
+        cat ${GITHUB_WORKSPACE}/Config/${{ github.event.inputs.Target }}.config >> ./.config
+        
+        # 生成配置文件
+        make defconfig -j$(nproc)
+
+
+    - name: 自定义files文件
+      run: |
+        cd ./wrt
+        
+        # 删除已有files文件夹
+        rm -rf ./files
+        
+        # 复制通用General_Files
+        General_Files_Path="${GITHUB_WORKSPACE}/files/01-files-General/"
+        cp -rf  ${General_Files_Path} ./files/
+        
+        # 复制模式Mode_Files
+        Mode_Files_Path="${GITHUB_WORKSPACE}/files/02-files-${{ github.event.inputs.Mode }}/*"
+        cp -rf ${Mode_Files_Path} ./files/
+        
+        # 复制架构Target_Files
+        Target_Files_Path="${GITHUB_WORKSPACE}/files/03-files-${{ github.event.inputs.Target }}/*"
+        cp -rf ${Target_Files_Path} ./files/
+        
+        # 复制自定义files
+        User_Files_Path="${GITHUB_WORKSPACE}/files/04-files-${{ github.event.inputs.User }}/*"
+        cp -rf ${User_Files_Path} ./files/
+
+
+    - name: 配置Clash相关文件
+      run: |
+        cd ./wrt
+        
+        # 下载最新clash内核
+        Clash_Core_URL="https://raw.githubusercontent.com/vernesong/OpenClash/core/master/meta/clash-linux-${{ github.event.inputs.Clash_Core }}.tar.gz"
+        mkdir -p ./files/etc/openclash/core/
+        wget -cqO- ${Clash_Core_URL} | tar xOvz > ./files/etc/openclash/core/clash_meta
+        
+        # 下载最新GEO数据库
+        wget -cq ${{ env.GeoIP_URL }} -P files/etc/openclash/
+        wget -cq ${{ env.GeoSite_URL }} -P files/etc/openclash/
+        
+        # 下载最新订阅文件
+        wget -cq ${{ env.Clash_Subscription_Main }} -P files/etc/openclash/config/
+        wget -cq ${{ env.Clash_Subscription_Backup }} -P files/etc/openclash/config/
+        
+        # 检查files文件
+        tree ./files
+
+
+    - name: 下载交叉编译工具链
+      run: |
+        cd ./wrt
+        make download -j$(nproc)
+
+     
+    - name: 编译固件
+      run: |
+        cd ./wrt
+        make -j$(nproc) V=s 2>&1 | grep -i -E "^make.*(error|[12345]...Entering dir)"
+
+
+    - name: 打包固件
+      run: |
+        cd ./wrt
+        
+        # 创建上传目录
+        mkdir ./upload
+        
+        # 删除编译目录下不需要的文件，只保留生成的固件
+        find ./bin/targets/ -iregex ".*\(buildinfo\|json\|manifest\|sha256sums\|packages\)$" -exec rm -rf {} +
+        
+        # 移动处理好的文件到上传目录
+        find ./bin/targets/ -type f -exec mv -f {} ./upload/ \;
+
+
+    - name: 发布固件
+      uses: softprops/action-gh-release@master
+      with:
+        # Release发布的tag名，根据编译架构，openWRT版本，编译时间生成
+        tag_name: ${{ github.event.inputs.Target }}_${{env.openWRT_Version}}_${{env.Compile_Date}}
+        # Release发布的描述
+        body: |
+            ${{ github.event.inputs.Target }}_${{env.openWRT_Version}}_${{env.Compile_Date}}
+        # 需要上传的文件
+        files: ./wrt/upload/*.*
