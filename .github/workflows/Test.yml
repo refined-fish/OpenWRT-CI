@@ -11,6 +11,27 @@ on:
         required: true
         type: string
 
+      # Clash订阅链接
+      Clash_Subscription_Main: 
+        description: "Clash订阅链接Main"
+        required: true
+        type: string
+
+      # Clash订阅链接
+      Clash_Subscription_Backup: 
+        description: "Clash订阅链接Backup"
+        required: true
+        type: string
+
+########## 工作流中的环境变量
+env:
+  # GeoIP数据库下载链接
+  GeoIP_URL: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.dat"
+  
+  # GeoSite数据库下载链接
+  GeoSite_URL: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geosite.dat"
+
+
 ########## jobs定义
 jobs:
   Test:
