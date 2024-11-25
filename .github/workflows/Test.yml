@@ -1,0 +1,32 @@
+########## 工作流名称
+name: OpenWRT_Compile
+
+######### 定义触发器
+on: 
+  workflow_dispatch:
+
+########## jobs定义
+jobs:
+  Test:
+    # 目前Ubuntu最新22.04
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: 配置Clash相关文件
+      run: |
+        
+        # 下载最新clash内核
+        Clash_Core_URL="https://raw.githubusercontent.com/vernesong/OpenClash/core/master/meta/clash-linux-${{ github.event.inputs.Clash_Core }}.tar.gz"
+        mkdir -p ./files/etc/openclash/core/
+        wget -O- ${Clash_Core_URL} | tar xOvz > ./files/etc/openclash/core/clash_meta
+        
+        # 下载最新GEO数据库
+        wget ${{ env.GeoIP_URL }} -P files/etc/openclash/
+        wget ${{ env.GeoSite_URL }} -P files/etc/openclash/
+        
+        # 下载最新订阅文件
+        wget ${{ github.event.inputs.Clash_Subscription_Main }} -P files/etc/openclash/config/
+        wget ${{ github.event.inputs.Clash_Subscription_Backup }} -P files/etc/openclash/config/
+        
+        # 检查files文件
+        tree ./files

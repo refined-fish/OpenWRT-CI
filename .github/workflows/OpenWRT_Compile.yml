@@ -15,7 +15,7 @@ on:
       # openWRT源码
       Repo_URL:
         description: |
-          源码选择：
+          上游OP源码：----------------------------------------------
           VIKINGYFY：https://github.com/VIKINGYFY/immortalwrt
           immortalwrt：https://github.com/immortalwrt/immortalwrt
         required: true
@@ -209,15 +209,6 @@ jobs:
           ./wrt/staging_dir/tool*
 
 
-    - name: 判断缓存状态
-      run: |
-        if ${{steps.check-cache.outputs.cache-hit == 'true'}}; then
-          echo "缓存命中！将会跳过工具链编译！"
-        else
-          echo "缓存未命中！本次编译成功后将会缓存 ！"
-        fi
-
-
     - name: 增加自定义Feeds源，更新并安装 feeds
       run: |
         cd ./wrt
@@ -267,6 +258,9 @@ jobs:
         # 复制自定义files
         User_Files_Path="${GITHUB_WORKSPACE}/Private/files/04-files-${{ github.event.inputs.User }}/*"
         cp -rf ${User_Files_Path} ./files/
+        
+        # 检查files文件
+        tree ./files
 
 
     - name: 配置Clash相关文件
@@ -276,15 +270,15 @@ jobs:
         # 下载最新clash内核
         Clash_Core_URL="https://raw.githubusercontent.com/vernesong/OpenClash/core/master/meta/clash-linux-${{ github.event.inputs.Clash_Core }}.tar.gz"
         mkdir -p ./files/etc/openclash/core/
-        wget -cqO- ${Clash_Core_URL} | tar xOvz > ./files/etc/openclash/core/clash_meta
+        wget -O- ${Clash_Core_URL} | tar xOvz > ./files/etc/openclash/core/clash_meta
         
         # 下载最新GEO数据库
-        wget -cq ${{ env.GeoIP_URL }} -P files/etc/openclash/
-        wget -cq ${{ env.GeoSite_URL }} -P files/etc/openclash/
+        wget ${{ env.GeoIP_URL }} -P files/etc/openclash/
+        wget ${{ env.GeoSite_URL }} -P files/etc/openclash/
         
         # 下载最新订阅文件
-        wget -cq ${{ github.event.inputs.Clash_Subscription_Main }} -P files/etc/openclash/config/
-        wget -cq ${{ github.event.inputs.Clash_Subscription_Backup }} -P files/etc/openclash/config/
+        wget ${{ github.event.inputs.Clash_Subscription_Main }} -P files/etc/openclash/config/
+        wget ${{ github.event.inputs.Clash_Subscription_Backup }} -P files/etc/openclash/config/
         
         # 检查files文件
         tree ./files
