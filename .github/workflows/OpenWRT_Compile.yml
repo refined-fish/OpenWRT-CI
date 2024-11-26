@@ -310,6 +310,12 @@ jobs:
         find ./bin/targets/ -type f -exec mv -f {} ./upload/ \;
 
 
+    - name: 展示编译完成后各个目录的大小
+      run: |
+        cd ./wrt
+        du -h --max-depth=1
+
+
     - name: 发布固件
       uses: softprops/action-gh-release@master
       with:
