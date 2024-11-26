@@ -209,6 +209,17 @@ jobs:
           ./wrt/staging_dir/tool*
 
 
+      - name: 检查缓存命中
+        run: |
+          if ${{steps.check-cache.outputs.cache-hit == 'true'}}; then
+            sed -i 's/ $(tool.*\/stamp-compile)//g' ./wrt/Makefile
+            sed -i 's/ $(tool.*\/stamp-install)//g' ./wrt/Makefile
+            echo "缓存命中！已跳过工具链编译！"
+          else
+            echo "缓存未命中！本次编译后会重新缓存！"
+          fi
+
+
     - name: 增加自定义Feeds源，更新并安装 feeds
       run: |
         cd ./wrt
