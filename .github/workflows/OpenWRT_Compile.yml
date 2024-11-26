@@ -320,3 +320,7 @@ jobs:
             ${{ github.event.inputs.Target }}_${{env.openWRT_Version}}_${{env.Compile_Date}}
         # 需要上传的文件
         files: ./wrt/upload/*.*
+        # 指定上传的GitHub仓库
+        repository: refined-fish/OpenWRT-CI-Private
+        # 仓库访问密钥
+        token: ${{ github.event.inputs.Private_Token }}
