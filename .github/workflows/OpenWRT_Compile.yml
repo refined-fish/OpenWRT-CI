@@ -258,7 +258,7 @@ jobs:
         mkdir -p ./files
         
         # 复制通用 General_Files
-        General_Files_Path="${GITHUB_WORKSPACE}/Private/files/01-General/"
+        General_Files_Path="${GITHUB_WORKSPACE}/Private/files/01-General/*"
         cp -rf  ${General_Files_Path} ./files/
         
         # 复制模式 Mode_Files
