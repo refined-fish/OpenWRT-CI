@@ -251,8 +251,11 @@ jobs:
       run: |
         cd ./wrt
         
-        # 删除已有files文件夹
+        # 删除已有 files 文件夹
         rm -rf ./files
+        
+        # 创建 files 目录
+        mkdir -p ./files
         
         # 复制通用 General_Files
         General_Files_Path="${GITHUB_WORKSPACE}/Private/files/01-General/"
@@ -280,6 +283,9 @@ jobs:
         
         # 删除已有 uci-defaults 文件夹
         rm -rf ./files/etc/uci-defaults
+        
+        # 创建 uci-defaults 目录
+        mkdir -p ./files/etc/uci-defaults
         
         # 复制通用 General_uci
         General_uci_Path="${GITHUB_WORKSPACE}/Private/uci-defaults/01-General/*"
@@ -309,9 +315,11 @@ jobs:
       run: |
         cd ./wrt
         
+        # 创建openclash目录
+        mkdir -p ./files/etc/openclash/core/
+        
         # 下载最新clash内核
         Clash_Core_URL="https://raw.githubusercontent.com/vernesong/OpenClash/core/master/meta/clash-linux-${{ github.event.inputs.Clash_Core }}.tar.gz"
-        mkdir -p ./files/etc/openclash/core/
         wget -O- ${Clash_Core_URL} | tar xOvz > ./files/etc/openclash/core/clash_meta
         
         # 下载最新GEO数据库
