@@ -254,21 +254,52 @@ jobs:
         # 删除已有files文件夹
         rm -rf ./files
         
-        # 复制通用General_Files
-        General_Files_Path="${GITHUB_WORKSPACE}/Private/files/01-files-General/"
+        # 复制通用 General_Files
+        General_Files_Path="${GITHUB_WORKSPACE}/Private/files/01-General/"
         cp -rf  ${General_Files_Path} ./files/
         
-        # 复制模式Mode_Files
-        Mode_Files_Path="${GITHUB_WORKSPACE}/Private/files/02-files-${{ github.event.inputs.Mode }}/*"
-        cp -rf ${Mode_Files_Path} ./files/
+        # 复制模式 Mode_Files
+        Mode_Files_Path="${GITHUB_WORKSPACE}/Private/files/02-Mode-${{ github.event.inputs.Mode }}/*"
+        cp -rf  ${Mode_Files_Path} ./files/
         
-        # 复制架构Target_Files
-        Target_Files_Path="${GITHUB_WORKSPACE}/Private/files/03-files-${{ github.event.inputs.Target }}/*"
-        cp -rf ${Target_Files_Path} ./files/
+        # 复制架构 Target_Files
+        Target_Files_Path="${GITHUB_WORKSPACE}/Private/files/03-Target-${{ github.event.inputs.Target }}/*"
+        cp -rf  ${Target_Files_Path} ./files/
         
-        # 复制自定义files
-        User_Files_Path="${GITHUB_WORKSPACE}/Private/files/04-files-${{ github.event.inputs.User }}/*"
-        cp -rf ${User_Files_Path} ./files/
+        # 复制用户 User_Files
+        User_Files_Path="${GITHUB_WORKSPACE}/Private/files/04-User-${{ github.event.inputs.User }}/*"
+        cp -rf  ${User_Files_Path} ./files/
+        
+        # 检查files文件
+        tree ./files
+
+
+    - name: 自定义uci-defaults脚本
+      run: |
+        cd ./wrt
+        
+        # 删除已有 uci-defaults 文件夹
+        rm -rf ./files/etc/uci-defaults
+        
+        # 复制通用 General_uci
+        General_uci_Path="${GITHUB_WORKSPACE}/Private/uci-defaults/01-General/*"
+        cp -rf  ${General_uci_Path} ./files/etc/uci-defaults/
+        
+        # 复制模式 Mode_uci
+        Mode_uci_Path="${GITHUB_WORKSPACE}/Private/uci-defaults/02-Mode-${{ github.event.inputs.Mode }}/*"
+        cp -rf  ${Mode_uci_Path} ./files/etc/uci-defaults/
+        
+        # 复制架构 Target_uci
+        Target_uci_Path="${GITHUB_WORKSPACE}/Private/uci-defaults/03-Target-${{ github.event.inputs.Target }}/*"
+        cp -rf  ${Target_uci_Path} ./files/etc/uci-defaults/
+        
+        # 复制用户 User_uci
+        User_uci_Path="${GITHUB_WORKSPACE}/Private/uci-defaults/04-User-${{ github.event.inputs.User }}/*"
+        cp -rf  ${User_uci_Path} ./files/etc/uci-defaults/
+        
+        # 复制后置通用 Back_General_uci
+        Back_General_uci_Path="${GITHUB_WORKSPACE}/Private/uci-defaults/09-Back-General/*"
+        cp -rf  ${Back_General_uci_Path} ./files/etc/uci-defaults/
         
         # 检查files文件
         tree ./files
